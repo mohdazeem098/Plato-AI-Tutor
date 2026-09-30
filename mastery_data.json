@@ -1,0 +1,14 @@
+{
+  "linked_lists": {
+    "correct": 0,
+    "total": 1
+  },
+  "arrays": {
+    "correct": 1,
+    "total": 2
+  },
+  "stacks": {
+    "correct": 1,
+    "total": 2
+  }
+}
