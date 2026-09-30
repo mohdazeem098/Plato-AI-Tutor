@@ -1,10 +1,11 @@
 # app.py
-# A Streamlit UI for the same quiz engine from quiz.py, so you get a
-# real interface instead of the terminal. Run with: streamlit run app.py
+# A Streamlit UI for the quiz engine with modern, beautiful design
+# Run with: streamlit run app.py
 
 import random
-
 import streamlit as st
+import pandas as pd
+from datetime import datetime
 
 from questions import QUESTION_BANK
 from mastery import (
@@ -17,215 +18,187 @@ from mastery import (
 
 TOPICS = ["arrays", "linked_lists", "stacks", "queues"]
 
-st.set_page_config(page_title="Plato — Data Structures Tutor", page_icon="🎓")
-
-st.markdown(
-    """
-    <style>
-        :root {
-            --bg: #0f172a;
-            --panel: rgba(15, 23, 42, 0.75);
-            --panel-soft: rgba(30, 41, 59, 0.7);
-            --card: rgba(15, 23, 42, 0.95);
-            --primary: #8b5cf6;
-            --primary-soft: #a78bfa;
-            --accent: #22c55e;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --text: #e2e8f0;
-            --muted: #a5b4cf;
-            --border: rgba(148, 163, 184, 0.22);
-        }
-
-        .stApp {
-            background: radial-gradient(circle at top left, rgba(139, 92, 246, 0.18), transparent 28%),
-                        radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.12), transparent 22%),
-                        #020817;
-            color: var(--text);
-        }
-
-        .block-container {
-            padding-top: 2rem;
-            padding-bottom: 3rem;
-            max-width: 1100px;
-        }
-
-        .hero {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.22), rgba(34, 197, 94, 0.12));
-            border: 1px solid var(--border);
-            border-radius: 22px;
-            padding: 1.5rem 1.5rem 1rem 1.5rem;
-            margin-bottom: 1.25rem;
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.35);
-        }
-
-        .hero-badge {
-            display: inline-block;
-            padding: 0.35rem 0.7rem;
-            border-radius: 999px;
-            background: rgba(167, 139, 250, 0.16);
-            border: 1px solid rgba(167, 139, 250, 0.35);
-            color: #ddd6fe;
-            font-size: 0.72rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            font-weight: 700;
-            margin-bottom: 0.8rem;
-        }
-
-        h1 {
-            font-size: 2.5rem !important;
-            margin-bottom: 0.2rem !important;
-        }
-
-        .subtitle {
-            color: var(--muted);
-            font-size: 1.02rem;
-            margin-bottom: 0;
-        }
-
-        .metric-card {
-            background: rgba(15, 23, 42, 0.58);
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            padding: 1rem 1.1rem;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
-        }
-
-        .stat-label {
-            color: var(--muted);
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-
-        .stat-value {
-            font-size: 1.8rem;
-            font-weight: 800;
-            margin-top: 0.25rem;
-            color: var(--text);
-        }
-
-        .pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            padding: 0.4rem 0.8rem;
-            border-radius: 999px;
-            font-size: 0.78rem;
-            font-weight: 700;
-            margin-bottom: 0.8rem;
-        }
-
-        .pill-learning {
-            background: rgba(59, 130, 246, 0.12);
-            border: 1px solid rgba(96, 165, 250, 0.35);
-            color: #bfdbfe;
-        }
-
-        .pill-recall {
-            background: rgba(245, 158, 11, 0.12);
-            border: 1px solid rgba(251, 191, 36, 0.35);
-            color: #fde68a;
-        }
-
-        .question-card {
-            background: rgba(15, 23, 42, 0.72);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 1.4rem 1.3rem;
-            margin-top: 1rem;
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.2);
-        }
-
-        .topic-tag {
-            display: inline-block;
-            background: rgba(34, 197, 94, 0.12);
-            border: 1px solid rgba(34, 197, 94, 0.35);
-            color: #bbf7d0;
-            padding: 0.35rem 0.7rem;
-            border-radius: 999px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            text-transform: capitalize;
-        }
-
-        .question-title {
-            font-size: 1.55rem !important;
-            line-height: 1.4;
-            margin-top: 0.5rem !important;
-            margin-bottom: 0.9rem !important;
-        }
-
-        .answer-option {
-            background: rgba(15, 23, 42, 0.75);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 0.65rem 0.9rem;
-            margin: 0.45rem 0;
-        }
-
-        .result-box {
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            padding: 1rem 1.2rem;
-            margin-top: 1rem;
-            background: rgba(15, 23, 42, 0.7);
-        }
-
-        .success-box {
-            border-color: rgba(34, 197, 94, 0.45);
-            background: rgba(34, 197, 94, 0.08);
-        }
-
-        .error-box {
-            border-color: rgba(239, 68, 68, 0.45);
-            background: rgba(239, 68, 68, 0.08);
-        }
-
-        .summary-card {
-            background: rgba(15, 23, 42, 0.72);
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            padding: 1rem 1.1rem;
-            margin-bottom: 1rem;
-        }
-
-        .summary-topic {
-            font-size: 1.1rem;
-            font-weight: 700;
-            text-transform: capitalize;
-            margin-bottom: 0.3rem;
-        }
-
-        .stButton > button {
-            border-radius: 12px !important;
-            font-weight: 700 !important;
-            padding: 0.7rem 1.2rem !important;
-            background: linear-gradient(135deg, #8b5cf6, #a78bfa) !important;
-            border: none !important;
-            color: white !important;
-            box-shadow: 0 8px 18px rgba(139, 92, 246, 0.35) !important;
-        }
-
-        .stButton > button:hover {
-            filter: brightness(1.08);
-        }
-
-        .secondary-button > button {
-            background: rgba(15, 23, 42, 0.8) !important;
-            border: 1px solid rgba(148, 163, 184, 0.32) !important;
-            box-shadow: none !important;
-        }
-    </style>
-    """,
-    unsafe_allow_html=True,
+# Configure page
+st.set_page_config(
+    page_title="Plato — Data Structures Tutor",
+    page_icon="🎓",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
+
+# Custom CSS for beautiful UI
+st.markdown("""
+    <style>
+    /* Main theme colors */
+    :root {
+        --primary-color: #6366f1;
+        --secondary-color: #ec4899;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
+        --light-bg: #f8fafc;
+        --dark-text: #1e293b;
+    }
+    
+    /* Overall styling */
+    .main {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    }
+    
+    /* Header styling */
+    .header-container {
+        background: linear-gradient(135deg, #6366f1 0%, #ec4899 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(99, 102, 241, 0.2);
+    }
+    
+    .header-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0;
+    }
+    
+    .header-subtitle {
+        font-size: 1rem;
+        opacity: 0.9;
+        margin: 0.5rem 0 0 0;
+    }
+    
+    /* Question card */
+    .question-card {
+        background: white;
+        border-left: 5px solid #6366f1;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Topic badge */
+    .topic-badge {
+        display: inline-block;
+        background: #e0e7ff;
+        color: #6366f1;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .difficulty-easy {
+        background: #d1fae5;
+        color: #059669;
+    }
+    
+    .difficulty-medium {
+        background: #fef3c7;
+        color: #b45309;
+    }
+    
+    .difficulty-hard {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+    
+    /* Progress section */
+    .progress-section {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    /* Stats cards */
+    .stats-card {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    
+    .stats-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #6366f1;
+        margin-bottom: 0.25rem;
+    }
+    
+    .stats-label {
+        font-size: 0.9rem;
+        color: #64748b;
+        font-weight: 600;
+    }
+    
+    /* Buttons */
+    .stButton > button {
+        background: linear-gradient(135deg, #6366f1 0%, #6366f1 100%);
+        color: white;
+        border: none;
+        padding: 0.7rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .stButton > button:hover {
+        background: linear-gradient(135deg, #4f46e5 0%, #4f46e5 100%);
+        box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+        transform: translateY(-2px);
+    }
+    
+    /* Feedback messages */
+    .success-message {
+        background: #ecfdf5;
+        border-left: 4px solid #10b981;
+        padding: 1rem;
+        border-radius: 8px;
+        color: #065f46;
+        margin-bottom: 1rem;
+    }
+    
+    .error-message {
+        background: #fef2f2;
+        border-left: 4px solid #ef4444;
+        padding: 1rem;
+        border-radius: 8px;
+        color: #7f1d1d;
+        margin-bottom: 1rem;
+    }
+    
+    /* Recall badge */
+    .recall-badge {
+        display: inline-block;
+        background: #fbbf24;
+        color: #78350f;
+        padding: 0.3rem 0.6rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+    
+    .learning-badge {
+        display: inline-block;
+        background: #93c5fd;
+        color: #0c2d6b;
+        padding: 0.3rem 0.6rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 
 def pick_question(topic, difficulty, already_asked):
-    """Same logic as quiz.py: match topic+difficulty, fall back if needed."""
+    """Match topic+difficulty, fall back if needed."""
     exact = [
         q for q in QUESTION_BANK
         if q["topic"] == topic and q["difficulty"] == difficulty and q["question"] not in already_asked
@@ -244,7 +217,7 @@ def pick_question(topic, difficulty, already_asked):
 
 
 def build_session(mastery):
-    """Pick one adaptive question per topic, same as quiz.py's main loop."""
+    """Pick one adaptive question per topic."""
     already_asked = set()
     session = []
 
@@ -271,85 +244,75 @@ def start_new_session():
     st.session_state.was_correct = None
 
 
-# ---------- Initialize state on first load ----------
+# Initialize state on first load
 if "session" not in st.session_state:
     start_new_session()
 
-st.markdown(
-    """
-    <div class="hero">
-        <div class="hero-badge">Adaptive Learning</div>
-        <h1>🎓 Plato</h1>
-        <p class="subtitle">Data Structures Tutor for steady progress, smarter recall, and faster mastery.</p>
+# Header
+st.markdown("""
+    <div class="header-container">
+        <h1 class="header-title">🎓 Plato</h1>
+        <p class="header-subtitle">Master Data Structures through Adaptive Learning</p>
     </div>
-    """,
-    unsafe_allow_html=True,
-)
+""", unsafe_allow_html=True)
 
-with st.sidebar:
-    st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
-    st.write("### Session overview")
-    answered = sum(
-        stats.get("total", 0)
-        for stats in st.session_state.mastery.values()
-        if isinstance(stats, dict)
-    )
-    st.metric("Questions answered", answered)
-
-    mastery_score = 0
-    if st.session_state.mastery:
-        topic_scores = [get_score(st.session_state.mastery, topic) for topic in TOPICS]
-        mastery_score = round(sum(topic_scores) / len(topic_scores)) if topic_scores else 0
-    st.metric("Avg. mastery", f"{mastery_score}%")
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    st.write("### Topics")
-    for topic in TOPICS:
-        score = get_score(st.session_state.mastery, topic)
-        st.caption(f"{topic.replace('_', ' ').title()} · {score}%")
-        st.progress(score / 100)
-
-# ---------- Quiz in progress ----------
+# Quiz in progress
 if st.session_state.index < len(st.session_state.session):
     item = st.session_state.session[st.session_state.index]
     q = item["question"]
     is_recall = item["is_recall"]
 
-    total_questions = len(st.session_state.session) if st.session_state.session else 1
-    progress_value = st.session_state.index / total_questions
+    # Progress bar with info
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        progress_value = st.session_state.index / len(st.session_state.session)
+        st.progress(progress_value)
+    with col2:
+        st.metric("Question", f"{st.session_state.index + 1}/{len(st.session_state.session)}")
 
-    st.progress(progress_value, text=f"Question {st.session_state.index + 1} of {total_questions}")
+    # Question metadata
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        badge_type = "🔁 Recall Check" if is_recall else "📘 Learning"
+        st.markdown(f"**{badge_type}**")
+    with col2:
+        st.markdown(f"**Topic:** `{q['topic'].title()}`")
+    with col3:
+        difficulty_color = {
+            "easy": "🟢 Easy",
+            "medium": "🟡 Medium",
+            "hard": "🔴 Hard"
+        }
+        st.markdown(f"**Difficulty:** {difficulty_color.get(q['difficulty'], q['difficulty'])}")
 
-    label = "🔁 Recall check" if is_recall else "📘 Learning"
-    pill_class = "pill-recall" if is_recall else "pill-learning"
-    st.markdown(f'<div class="pill {pill_class}">{label}</div>', unsafe_allow_html=True)
-    st.caption(f"Topic: {q['topic']} · Difficulty: {q['difficulty']}")
-
-    st.markdown(
-        """
+    # Question card
+    st.markdown(f"""
         <div class="question-card">
-            <div class="topic-tag">{topic}</div>
-            <div class="question-title">{question}</div>
+            <h2 style="margin-top: 0; color: #1e293b;">
+                {q["question"]}
+            </h2>
         </div>
-        """.format(topic=q["topic"], question=q["question"]),
-        unsafe_allow_html=True,
-    )
+    """, unsafe_allow_html=True)
 
-    option_keys = list(q["options"].keys())
+    # Answer options
+    option_labels = [f"{key}) {text}" for key, text in q["options"].items()]
 
     if not st.session_state.answered:
+        st.markdown("### Choose your answer:")
         choice = st.radio(
-            "Choose an answer:",
-            option_keys,
+            "Select an answer",
+            option_labels,
             index=None,
             key=f"radio_{st.session_state.index}",
-            format_func=lambda key: f"{key}) {q['options'][key]}",
+            label_visibility="collapsed"
         )
 
-        col1, col2 = st.columns([1, 1])
+        col1, col2 = st.columns([1, 4])
         with col1:
-            if st.button("Submit answer", disabled=(choice is None), use_container_width=True):
-                correct = choice == q["answer"]
+            if st.button("✓ Submit Answer", disabled=(choice is None), use_container_width=True):
+                chosen_key = choice.split(")")[0]
+                correct = chosen_key == q["answer"]
+
                 st.session_state.mastery = update_mastery(
                     st.session_state.mastery, q["topic"], correct, is_recall=is_recall
                 )
@@ -358,50 +321,71 @@ if st.session_state.index < len(st.session_state.session):
                 st.rerun()
 
     else:
+        # Show feedback
         if st.session_state.was_correct:
-            st.markdown(
-                """
-                <div class="result-box success-box">
-                    <h3 style='margin:0 0 0.3rem 0; color:#bbf7d0;'>✅ Correct!</h3>
-                    <div style='color:#dcfce7;'>Nice work — keep the momentum going.</div>
+            st.markdown("""
+                <div class="success-message">
+                    <h3 style="margin-top: 0;">✅ Correct!</h3>
+                    <p style="margin-bottom: 0;">Great job! You're building mastery.</p>
                 </div>
-                """,
-                unsafe_allow_html=True,
-            )
+            """, unsafe_allow_html=True)
         else:
             correct_text = q["options"][q["answer"]]
-            st.markdown(
-                f"""
-                <div class="result-box error-box">
-                    <h3 style='margin:0 0 0.3rem 0; color:#fecaca;'>❌ Not quite</h3>
-                    <div style='color:#fee2e2;'>The correct answer was <strong>{q['answer']}) {correct_text}</strong>.</div>
+            st.markdown(f"""
+                <div class="error-message">
+                    <h3 style="margin-top: 0;">❌ Not quite right</h3>
+                    <p style="margin-bottom: 0;">The correct answer was <strong>{q["answer"]}) {correct_text}</strong></p>
                 </div>
-                """,
-                unsafe_allow_html=True,
-            )
+            """, unsafe_allow_html=True)
 
-        col1, col2 = st.columns([1, 1])
+        # Next button
+        col1, col2, col3 = st.columns([1, 1, 2])
         with col1:
-            if st.button("Next question ➡️", use_container_width=True):
+            if st.button("➡️ Next Question", use_container_width=True):
                 st.session_state.index += 1
                 st.session_state.answered = False
                 st.session_state.selected = None
                 st.rerun()
 
-# ---------- Session complete: show summary ----------
+# Session complete
 else:
-    st.markdown(
-        """
-        <div class="hero" style="margin-top: 1rem;">
-            <div class="hero-badge">Session complete</div>
-            <h2>🎉 Great job</h2>
-            <p class="subtitle">You finished this adaptive practice run. Here's how your mastery is shaping up.</p>
+    st.markdown("""
+        <div style="text-align: center; padding: 2rem;">
+            <h1 style="font-size: 3rem; margin-bottom: 0.5rem;">🎉 Session Complete!</h1>
+            <p style="font-size: 1.2rem; color: #64748b;">Review your mastery progress below</p>
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    """, unsafe_allow_html=True)
 
+    st.markdown("---")
+
+    st.markdown("### 📊 Your Mastery Progress")
+
+    # Create stats overview
     mastery = st.session_state.mastery
+    cols = st.columns(len(TOPICS))
+
+    for idx, topic in enumerate(TOPICS):
+        stats = mastery.get(topic)
+        if not stats:
+            continue
+
+        score = get_score(mastery, topic)
+        with cols[idx]:
+            st.markdown(f"""
+                <div class="stats-card">
+                    <div class="stats-value">{score}%</div>
+                    <div class="stats-label">{topic.replace('_', ' ').title()}</div>
+                    <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.5rem;">
+                        {stats['correct']}/{stats['total']} correct
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # Detailed breakdown
+    st.markdown("### 📈 Detailed Breakdown")
+
     for topic in TOPICS:
         stats = mastery.get(topic)
         if not stats:
@@ -410,30 +394,53 @@ else:
         score = get_score(mastery, topic)
         recall = stats.get("recall", {"correct": 0, "total": 0})
 
-        st.markdown(
-            """
-            <div class="summary-card">
-                <div class="summary-topic">{topic}</div>
-                <div>{score}% ({correct}/{total} correct)</div>
-            </div>
-            """.format(
-                topic=topic,
-                score=score,
-                correct=stats["correct"],
-                total=stats["total"],
-            ),
-            unsafe_allow_html=True,
-        )
-        st.progress(score / 100)
+        with st.expander(f"**{topic.title()}** — {score}% mastery", expanded=False):
+            col1, col2 = st.columns(2)
 
-        if recall["total"] > 0:
-            recall_pct = round((recall["correct"] / recall["total"]) * 100)
-            st.caption(f"Recall performance: {recall_pct}% ({recall['correct']}/{recall['total']})")
+            with col1:
+                st.markdown("**Overall Performance**")
+                st.progress(score / 100)
+                st.markdown(f"✓ {stats['correct']} correct out of {stats['total']} attempts")
 
-    col1, col2 = st.columns([1, 1])
+            with col2:
+                if recall["total"] > 0:
+                    recall_pct = round((recall["correct"] / recall["total"]) * 100)
+                    st.markdown("**Recall Performance**")
+                    st.progress(recall_pct / 100)
+                    st.markdown(f"✓ {recall['correct']} correct out of {recall['total']} recall checks")
+                else:
+                    st.markdown("*No recall checks yet for this topic*")
+
+    st.markdown("---")
+
+    # Action buttons
+    col1, col2, col3 = st.columns([1, 1, 2])
     with col1:
-        if st.button("Start another session", use_container_width=True):
+        if st.button("🔄 Start New Session", use_container_width=True):
             start_new_session()
             st.rerun()
+
     with col2:
-        st.button("Close", use_container_width=True, disabled=True)
+        if st.button("📥 Export Progress", use_container_width=True):
+            # Create export data
+            export_data = []
+            for topic in TOPICS:
+                stats = mastery.get(topic, {})
+                if stats:
+                    recall = stats.get("recall", {"correct": 0, "total": 0})
+                    export_data.append({
+                        "Topic": topic.title(),
+                        "Score (%)": get_score(mastery, topic),
+                        "Correct": stats.get("correct", 0),
+                        "Total": stats.get("total", 0),
+                        "Recall (%)": round((recall["correct"] / recall["total"]) * 100) if recall["total"] > 0 else 0
+                    })
+
+            df = pd.DataFrame(export_data)
+            csv = df.to_csv(index=False)
+            st.download_button(
+                label="📊 Download CSV",
+                data=csv,
+                file_name=f"plato_progress_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                mime="text/csv"
+            )
