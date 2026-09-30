@@ -1,18 +1,38 @@
 {
   "linked_lists": {
-    "correct": 0,
-    "total": 2
+    "correct": 2,
+    "total": 4,
+    "last_tested": "2026-09-30T10:50:08.796627+00:00",
+    "recall": {
+      "correct": 1,
+      "total": 1
+    }
   },
   "arrays": {
-    "correct": 2,
-    "total": 3
+    "correct": 4,
+    "total": 5,
+    "last_tested": "2026-09-30T10:50:01.218672+00:00",
+    "recall": {
+      "correct": 1,
+      "total": 1
+    }
   },
   "stacks": {
-    "correct": 1,
-    "total": 3
+    "correct": 2,
+    "total": 5,
+    "last_tested": "2026-09-30T10:50:14.614445+00:00",
+    "recall": {
+      "correct": 1,
+      "total": 1
+    }
   },
   "queues": {
-    "correct": 0,
-    "total": 1
+    "correct": 1,
+    "total": 3,
+    "last_tested": "2026-09-30T10:50:26.158947+00:00",
+    "recall": {
+      "correct": 0,
+      "total": 1
+    }
   }
 }

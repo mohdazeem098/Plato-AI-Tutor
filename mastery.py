@@ -4,8 +4,18 @@
 
 import json
 import os
+from datetime import datetime, timezone
 
 MASTERY_FILE = "mastery_data.json"
+
+# How long since a topic was last tested before we treat the next
+# question on it as a "recall check" instead of normal practice.
+#
+# For real use, this should be something like 20 * 3600 (20 hours) or
+# 24 * 3600 (1 day), so recall is genuinely tested after time has
+# passed. It's set low here (60 seconds) so you can actually see the
+# feature working today without waiting a full day between tests.
+RECALL_GAP_SECONDS = 60
 
 
 def load_mastery():
@@ -22,22 +32,61 @@ def save_mastery(mastery):
         json.dump(mastery, f, indent=2)
 
 
-def update_mastery(mastery, topic, correct):
+def _blank_topic():
+    return {
+        "correct": 0,
+        "total": 0,
+        "recall": {"correct": 0, "total": 0},
+        "last_tested": None,
+    }
+
+
+def seconds_since_last_test(mastery, topic):
+    """Return how many seconds since this topic was last tested, or None if never."""
+    if topic not in mastery or mastery[topic].get("last_tested") is None:
+        return None
+    last = datetime.fromisoformat(mastery[topic]["last_tested"])
+    now = datetime.now(timezone.utc)
+    return (now - last).total_seconds()
+
+
+def is_recall_check(mastery, topic, gap_seconds=RECALL_GAP_SECONDS):
+    """
+    True if this topic was tested before AND enough time has passed
+    that answering it again counts as testing recall, not first-pass
+    learning.
+    """
+    elapsed = seconds_since_last_test(mastery, topic)
+    return elapsed is not None and elapsed >= gap_seconds
+
+
+def update_mastery(mastery, topic, correct, is_recall=False):
     """
     Update a topic's mastery after answering one question.
 
-    We track 'correct' and 'total' answers per topic, then calculate
-    a percentage score. This is a simple starting model — later this
-    can be swapped for something more advanced like Bayesian Knowledge
-    Tracing (the pyBKT library) without changing how the rest of the
-    app calls this function.
+    'correct'/'total' track overall performance (same as before).
+    'recall' tracks performance specifically on questions answered
+    after a time gap — i.e. genuine memory recall, not just having
+    just learned it a moment ago.
     """
     if topic not in mastery:
-        mastery[topic] = {"correct": 0, "total": 0}
+        mastery[topic] = _blank_topic()
+    else:
+        # Backfill any keys missing from older data so this never crashes
+        # on a file saved before recall-tracking existed.
+        mastery[topic].setdefault("recall", {"correct": 0, "total": 0})
+        mastery[topic].setdefault("last_tested", None)
 
     mastery[topic]["total"] += 1
     if correct:
         mastery[topic]["correct"] += 1
+
+    if is_recall:
+        mastery[topic]["recall"]["total"] += 1
+        if correct:
+            mastery[topic]["recall"]["correct"] += 1
+
+    mastery[topic]["last_tested"] = datetime.now(timezone.utc).isoformat()
 
     save_mastery(mastery)
     return mastery
@@ -77,4 +126,11 @@ def print_summary(mastery):
         return
     for topic, stats in mastery.items():
         score = get_score(mastery, topic)
-        print(f"  {topic:15s}: {score}%  ({stats['correct']}/{stats['total']} correct)")
+        line = f"  {topic:15s}: {score}%  ({stats['correct']}/{stats['total']} correct)"
+
+        recall = stats.get("recall", {"correct": 0, "total": 0})
+        if recall["total"] > 0:
+            recall_pct = round((recall["correct"] / recall["total"]) * 100)
+            line += f"   | recall: {recall_pct}% ({recall['correct']}/{recall['total']})"
+
+        print(line)

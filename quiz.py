@@ -4,7 +4,14 @@
 
 import random
 from questions import QUESTION_BANK
-from mastery import load_mastery, update_mastery, print_summary, get_score, recommended_difficulty
+from mastery import (
+    load_mastery,
+    update_mastery,
+    print_summary,
+    get_score,
+    recommended_difficulty,
+    is_recall_check,
+)
 
 TOPICS = ["arrays", "linked_lists", "stacks", "queues"]
 
@@ -33,9 +40,10 @@ def pick_question(topic, difficulty, already_asked):
     return None  # every question on this topic has already been asked
 
 
-def ask_question(q):
+def ask_question(q, is_recall):
     """Show one question, get the student's answer, return True if correct."""
-    print(f"\n[{q['topic']} - {q['difficulty']}]")
+    label = "🔁 RECALL CHECK" if is_recall else "📘 learning"
+    print(f"\n[{q['topic']} - {q['difficulty']}] {label}")
     print(q["question"])
     for key, option_text in q["options"].items():
         print(f"  {key}) {option_text}")
@@ -67,9 +75,11 @@ def main():
         if q is None:
             continue  # skip if we've run out of unique questions for this topic
 
+        recall_check = is_recall_check(mastery, topic)
+
         already_asked.add(q["question"])
-        was_correct = ask_question(q)
-        mastery = update_mastery(mastery, topic, was_correct)
+        was_correct = ask_question(q, recall_check)
+        mastery = update_mastery(mastery, topic, was_correct, is_recall=recall_check)
 
     print_summary(mastery)
 
