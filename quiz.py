@@ -4,7 +4,33 @@
 
 import random
 from questions import QUESTION_BANK
-from mastery import load_mastery, update_mastery, print_summary
+from mastery import load_mastery, update_mastery, print_summary, get_score, recommended_difficulty
+
+TOPICS = ["arrays", "linked_lists", "stacks", "queues"]
+
+
+def pick_question(topic, difficulty, already_asked):
+    """
+    Find a question matching this topic and difficulty that hasn't
+    been asked yet this session. Falls back to any unused question on
+    the topic if no exact difficulty match is available (keeps the
+    MVP working even with a small question bank).
+    """
+    exact_matches = [
+        q for q in QUESTION_BANK
+        if q["topic"] == topic and q["difficulty"] == difficulty and q["question"] not in already_asked
+    ]
+    if exact_matches:
+        return random.choice(exact_matches)
+
+    fallback_matches = [
+        q for q in QUESTION_BANK
+        if q["topic"] == topic and q["question"] not in already_asked
+    ]
+    if fallback_matches:
+        return random.choice(fallback_matches)
+
+    return None  # every question on this topic has already been asked
 
 
 def ask_question(q):
@@ -27,20 +53,23 @@ def ask_question(q):
 
 def main():
     mastery = load_mastery()
-
-    # Shuffle so it's not always the same order every run
-    questions = QUESTION_BANK.copy()
-    random.shuffle(questions)
-
-    # For the MVP, just ask 5 questions per session
-    session_questions = questions[:5]
+    already_asked = set()
 
     print("🎓 Welcome to your Data Structures practice session!")
-    print(f"You'll get {len(session_questions)} questions this round.\n")
+    print("Questions will adapt to your current mastery in each topic.\n")
 
-    for q in session_questions:
+    # Ask one question per topic, at a difficulty matched to current mastery
+    for topic in TOPICS:
+        score = get_score(mastery, topic)
+        difficulty = recommended_difficulty(score)
+        q = pick_question(topic, difficulty, already_asked)
+
+        if q is None:
+            continue  # skip if we've run out of unique questions for this topic
+
+        already_asked.add(q["question"])
         was_correct = ask_question(q)
-        mastery = update_mastery(mastery, q["topic"], was_correct)
+        mastery = update_mastery(mastery, topic, was_correct)
 
     print_summary(mastery)
 

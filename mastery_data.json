@@ -1,14 +1,18 @@
 {
   "linked_lists": {
     "correct": 0,
-    "total": 1
+    "total": 2
   },
   "arrays": {
-    "correct": 1,
-    "total": 2
+    "correct": 2,
+    "total": 3
   },
   "stacks": {
     "correct": 1,
-    "total": 2
+    "total": 3
+  },
+  "queues": {
+    "correct": 0,
+    "total": 1
   }
 }

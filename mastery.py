@@ -50,6 +50,25 @@ def get_score(mastery, topic):
     return round((mastery[topic]["correct"] / mastery[topic]["total"]) * 100)
 
 
+def recommended_difficulty(score):
+    """
+    Decide which difficulty to serve next, based on current mastery %.
+
+    - Below 40%: student is still struggling, stick to easy questions
+    - 40-75%: developing understanding, medium questions
+    - Above 75%: doing well, push with hard questions
+
+    These thresholds are a simple starting point and can be tuned later
+    as you get real usage data.
+    """
+    if score < 40:
+        return "easy"
+    elif score < 75:
+        return "medium"
+    else:
+        return "hard"
+
+
 def print_summary(mastery):
     """Print a readable summary of mastery across all topics."""
     print("\n📊 Your mastery so far:")
